@@ -20,6 +20,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const userInfo = document.getElementById("user-info");
   const displayName = document.getElementById("display-name");
   const logoutButton = document.getElementById("logout-button");
+  const themeToggleButton = document.getElementById("theme-toggle-button");
+  const themeToggleLabel = document.getElementById("theme-toggle-label");
+  const themeToggleIcon = document.getElementById("theme-toggle-icon");
   const loginModal = document.getElementById("login-modal");
   const loginForm = document.getElementById("login-form");
   const closeLoginModal = document.querySelector(".close-login-modal");
@@ -43,6 +46,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Authentication state
   let currentUser = null;
+
+  function applyTheme(theme) {
+    const isDarkMode = theme === "dark";
+    document.body.classList.toggle("dark-mode", isDarkMode);
+    themeToggleLabel.textContent = isDarkMode ? "Light Mode" : "Dark Mode";
+    themeToggleIcon.textContent = isDarkMode ? "☀️" : "🌙";
+  }
+
+  function initializeTheme() {
+    const savedTheme = localStorage.getItem("theme");
+    const theme = savedTheme === "dark" ? "dark" : "light";
+    applyTheme(theme);
+  }
+
+  function toggleTheme() {
+    const isDarkMode = document.body.classList.contains("dark-mode");
+    const nextTheme = isDarkMode ? "light" : "dark";
+    applyTheme(nextTheme);
+    localStorage.setItem("theme", nextTheme);
+  }
 
   // Time range mappings for the dropdown
   const timeRanges = {
@@ -237,6 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Event listeners for authentication
   loginButton.addEventListener("click", openLoginModal);
   logoutButton.addEventListener("click", logout);
+  themeToggleButton.addEventListener("click", toggleTheme);
   closeLoginModal.addEventListener("click", closeLoginModalHandler);
 
   // Close login modal when clicking outside
@@ -862,6 +886,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Initialize app
+  initializeTheme();
   checkAuthentication();
   initializeFilters();
   fetchActivities();
