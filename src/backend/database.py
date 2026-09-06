@@ -166,6 +166,12 @@ initial_activities = {
         },
         "max_participants": 16,
         "participants": ["william@mergington.edu", "jacob@mergington.edu"]
+    },
+    "Manga Maniacs": {
+        "description": "Dive into the bold worlds of Japanese Manga—discover unforgettable heroes, dramatic rivalries, and epic stories panel by panel.",
+        "schedule": "Tuesdays at 7pm",
+        "max_participants": 15,
+        "participants": []
     }
 }
 
