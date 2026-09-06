@@ -448,14 +448,18 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // Apply difficulty filter.
-      // "unspecified" means "All Levels" and should show activities with no difficulty metadata.
+      // Missing difficulty metadata is treated as "All" (activities for all levels).
+      const activityDifficulty = details.difficulty || "All";
+
+      // "unspecified" means "All Levels" and should show activities without specific difficulty metadata.
       if (currentDifficulty === "unspecified") {
-        if (details.difficulty && details.difficulty !== "All") {
+        if (activityDifficulty !== "All") {
           return;
         }
       } else if (
         currentDifficulty !== "any" &&
-        details.difficulty !== currentDifficulty
+        activityDifficulty !== "All" &&
+        activityDifficulty !== currentDifficulty
       ) {
         return;
       }
