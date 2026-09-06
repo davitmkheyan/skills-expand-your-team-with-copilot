@@ -40,6 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let searchQuery = "";
   let currentDay = "";
   let currentTimeRange = "";
+  let hasScrolledToSharedActivity = false;
 
   // Authentication state
   let currentUser = null;
@@ -467,19 +468,56 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Display filtered activities
-    Object.entries(filteredActivities).forEach(([name, details]) => {
-      renderActivityCard(name, details);
+    Object.entries(filteredActivities).forEach(([name, details], index) => {
+      renderActivityCard(name, details, index);
     });
+
+    scrollToSharedActivityFromUrl();
+  }
+
+  function slugifyText(value) {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-");
+  }
+
+  function toPlainText(value) {
+    return String(value).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
   }
 
   function createShareContent(name, details, schedule) {
-    const activityAnchor = `#activity-${encodeURIComponent(
-      name.toLowerCase().replace(/\s+/g, "-")
-    )}`;
-    const shareUrl = `${window.location.origin}${window.location.pathname}${activityAnchor}`;
-    const shareText = `Check out ${name} at Mergington High School! ${details.description} Schedule: ${schedule}`;
+    const plainDescription = toPlainText(details.description);
+    const currentPageUrl = new URL(window.location.href);
+    currentPageUrl.searchParams.set("activity", name);
+    currentPageUrl.hash = "";
+    const shareUrl = currentPageUrl.toString();
+    const shareText = `Check out ${name} at Mergington High School! ${plainDescription} Schedule: ${schedule}`;
 
     return { shareText, shareUrl };
+  }
+
+  function scrollToSharedActivityFromUrl() {
+    if (hasScrolledToSharedActivity) {
+      return;
+    }
+
+    const pageUrl = new URL(window.location.href);
+    const sharedActivityId = pageUrl.searchParams.get("activity");
+    if (!sharedActivityId) {
+      return;
+    }
+
+    const activityCards = document.querySelectorAll(".activity-card");
+    const sharedActivityCard = Array.from(activityCards).find(
+      (card) => card.getAttribute("data-activity-id") === sharedActivityId
+    );
+
+    if (sharedActivityCard) {
+      sharedActivityCard.scrollIntoView({ behavior: "smooth", block: "center" });
+      hasScrolledToSharedActivity = true;
+    }
   }
 
   async function copyShareText(shareText, shareUrl) {
@@ -496,8 +534,11 @@ document.addEventListener("DOMContentLoaded", () => {
         tempInput.style.left = "-9999px";
         document.body.appendChild(tempInput);
         tempInput.select();
-        document.execCommand("copy");
+        const copied = document.execCommand("copy");
         document.body.removeChild(tempInput);
+        if (!copied) {
+          throw new Error("Copy command was not successful.");
+        }
       }
 
       showMessage("Share text copied! You can now send it to friends.", "success");
@@ -508,9 +549,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Function to render a single activity card
-  function renderActivityCard(name, details) {
+  function renderActivityCard(name, details, activityIndex) {
     const activityCard = document.createElement("div");
     activityCard.className = "activity-card";
+    activityCard.setAttribute("data-activity-id", name);
 
     // Calculate spots and capacity
     const totalSpots = details.max_participants;
@@ -536,6 +578,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const shareContent = createShareContent(name, details, formattedSchedule);
     const encodedShareText = encodeURIComponent(shareContent.shareText);
     const encodedShareUrl = encodeURIComponent(shareContent.shareUrl);
+    const shareLabelId = `share-label-${slugifyText(name)}-${activityIndex}`;
 
     // Create activity tag
     const tagHtml = `
@@ -590,8 +633,8 @@ document.addEventListener("DOMContentLoaded", () => {
             .join("")}
         </ul>
       </div>
-      <div class="share-buttons">
-        <span class="share-label">Share:</span>
+      <div class="share-buttons" role="group" aria-labelledby="${shareLabelId}">
+        <span class="share-label" id="${shareLabelId}">Share:</span>
         <a
           class="share-button"
           href="https://twitter.com/intent/tweet?text=${encodedShareText}&url=${encodedShareUrl}"
