@@ -472,6 +472,41 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function createShareContent(name, details, schedule) {
+    const activityAnchor = `#activity-${encodeURIComponent(
+      name.toLowerCase().replace(/\s+/g, "-")
+    )}`;
+    const shareUrl = `${window.location.origin}${window.location.pathname}${activityAnchor}`;
+    const shareText = `Check out ${name} at Mergington High School! ${details.description} Schedule: ${schedule}`;
+
+    return { shareText, shareUrl };
+  }
+
+  async function copyShareText(shareText, shareUrl) {
+    const textToCopy = `${shareText} ${shareUrl}`;
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        const tempInput = document.createElement("textarea");
+        tempInput.value = textToCopy;
+        tempInput.setAttribute("readonly", "");
+        tempInput.style.position = "absolute";
+        tempInput.style.left = "-9999px";
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
+      }
+
+      showMessage("Share text copied! You can now send it to friends.", "success");
+    } catch (error) {
+      console.error("Error copying share text:", error);
+      showMessage("Could not copy share text. Please try again.", "error");
+    }
+  }
+
   // Function to render a single activity card
   function renderActivityCard(name, details) {
     const activityCard = document.createElement("div");
@@ -498,6 +533,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Format the schedule using the new helper function
     const formattedSchedule = formatSchedule(details);
+    const shareContent = createShareContent(name, details, formattedSchedule);
+    const encodedShareText = encodeURIComponent(shareContent.shareText);
+    const encodedShareUrl = encodeURIComponent(shareContent.shareUrl);
 
     // Create activity tag
     const tagHtml = `
@@ -552,6 +590,45 @@ document.addEventListener("DOMContentLoaded", () => {
             .join("")}
         </ul>
       </div>
+      <div class="share-buttons">
+        <span class="share-label">Share:</span>
+        <a
+          class="share-button"
+          href="https://twitter.com/intent/tweet?text=${encodedShareText}&url=${encodedShareUrl}"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Share ${name} on X"
+        >
+          X
+        </a>
+        <a
+          class="share-button"
+          href="https://www.facebook.com/sharer/sharer.php?u=${encodedShareUrl}&quote=${encodedShareText}"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Share ${name} on Facebook"
+        >
+          Facebook
+        </a>
+        <a
+          class="share-button"
+          href="https://wa.me/?text=${encodeURIComponent(
+            `${shareContent.shareText} ${shareContent.shareUrl}`
+          )}"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Share ${name} on WhatsApp"
+        >
+          WhatsApp
+        </a>
+        <button
+          type="button"
+          class="share-button copy-share-button"
+          aria-label="Copy share text for ${name}"
+        >
+          Copy
+        </button>
+      </div>
       <div class="activity-card-actions">
         ${
           currentUser
@@ -575,6 +652,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const deleteButtons = activityCard.querySelectorAll(".delete-participant");
     deleteButtons.forEach((button) => {
       button.addEventListener("click", handleUnregister);
+    });
+
+    const copyShareButton = activityCard.querySelector(".copy-share-button");
+    copyShareButton.addEventListener("click", async () => {
+      await copyShareText(shareContent.shareText, shareContent.shareUrl);
     });
 
     // Add click handler for register button (only when authenticated)
