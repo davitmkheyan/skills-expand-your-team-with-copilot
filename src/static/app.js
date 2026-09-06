@@ -450,7 +450,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Apply difficulty filter.
       // "unspecified" means "All Levels" and should show activities with no difficulty metadata.
       if (currentDifficulty === "unspecified") {
-        if (details.difficulty) {
+        if (details.difficulty && details.difficulty !== "All") {
           return;
         }
       } else if (
