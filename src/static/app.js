@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let searchQuery = "";
   let currentDay = "";
   let currentTimeRange = "";
-  let currentDifficulty = "";
+  let currentDifficulty = "unspecified";
 
   // Authentication state
   let currentUser = null;
@@ -448,12 +448,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // Apply difficulty filter.
-      // Empty value means "All Levels" and should show only activities with no difficulty metadata.
-      if (currentDifficulty) {
-        if (details.difficulty !== currentDifficulty) {
+      // "unspecified" means "All Levels" and should show activities with no difficulty metadata.
+      if (currentDifficulty === "unspecified") {
+        if (details.difficulty) {
           return;
         }
-      } else if (details.difficulty) {
+      } else if (details.difficulty !== currentDifficulty) {
         return;
       }
 
@@ -665,8 +665,12 @@ document.addEventListener("DOMContentLoaded", () => {
   difficultyFilters.forEach((button) => {
     button.addEventListener("click", () => {
       // Update active class
-      difficultyFilters.forEach((btn) => btn.classList.remove("active"));
+      difficultyFilters.forEach((btn) => {
+        btn.classList.remove("active");
+        btn.setAttribute("aria-pressed", "false");
+      });
       button.classList.add("active");
+      button.setAttribute("aria-pressed", "true");
 
       // Update current difficulty filter and display filtered activities
       currentDifficulty = button.dataset.difficulty;
