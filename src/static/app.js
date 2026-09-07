@@ -45,6 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentDay = "";
   let currentTimeRange = "";
   let currentDifficulty = "any";
+  let hasFocusedSharedActivity = false;
 
   // Authentication state
   let currentUser = null;
@@ -61,11 +62,76 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
+  function createActivityId(activityName) {
+    return activityName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function getSharedActivityIdFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("activity");
+  }
+
+  function buildActivityShareUrl(activityId) {
+    const shareUrl = new URL(window.location.href);
+    shareUrl.searchParams.set("activity", activityId);
+    return shareUrl.toString();
+  }
+
+  async function copyShareLink(link) {
+    try {
+      await navigator.clipboard.writeText(link);
+      showMessage("Share link copied to clipboard.", "success");
+    } catch (error) {
+      const tempInput = document.createElement("input");
+      tempInput.value = link;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand("copy");
+      document.body.removeChild(tempInput);
+      showMessage("Share link copied to clipboard.", "success");
+    }
+  }
+
+  function focusSharedActivityCard() {
+    if (hasFocusedSharedActivity) {
+      return;
+    }
+
+    const sharedActivityId = getSharedActivityIdFromUrl();
+    if (!sharedActivityId) {
+      return;
+    }
+
+    const sharedCard = document.querySelector(
+      `[data-activity-id="${sharedActivityId}"]`
+    );
+
+    if (!sharedCard) {
+      return;
+    }
+
+    hasFocusedSharedActivity = true;
+    sharedCard.classList.add("shared-activity-highlight");
+    sharedCard.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    setTimeout(() => {
+      sharedCard.classList.remove("shared-activity-highlight");
+    }, 2500);
+  }
+
   function initializeTheme() {
     const savedTheme = localStorage.getItem("theme");
     const theme = savedTheme === "dark" ? "dark" : "light";
     applyTheme(theme);
   }
+
+  const copyShareButton = activityCard.querySelector(".copy-share-button");
+  copyShareButton.addEventListener("click", () => {
+    copyShareLink(shareUrl);
+  });
 
   function toggleTheme() {
     const isDarkMode = document.body.classList.contains("dark-mode");
@@ -526,12 +592,16 @@ document.addEventListener("DOMContentLoaded", () => {
     Object.entries(filteredActivities).forEach(([name, details]) => {
       renderActivityCard(name, details);
     });
+
+    focusSharedActivityCard();
   }
 
   // Function to render a single activity card
   function renderActivityCard(name, details) {
     const activityCard = document.createElement("div");
     activityCard.className = "activity-card";
+    const activityId = createActivityId(name);
+    activityCard.dataset.activityId = activityId;
 
     // Calculate spots and capacity
     const totalSpots = details.max_participants;
@@ -554,6 +624,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Format the schedule using the new helper function
     const formattedSchedule = formatSchedule(details);
+    const shareUrl = buildActivityShareUrl(activityId);
+    const shareMessage = `Check out ${name} at Mergington High School activities!`;
 
     // Create activity tag
     const tagHtml = `
@@ -607,6 +679,43 @@ document.addEventListener("DOMContentLoaded", () => {
             )
             .join("")}
         </ul>
+      </div>
+      <div class="share-actions">
+        <span class="share-label">Share:</span>
+        <button class="share-button copy-share-button" type="button">Copy Link</button>
+        <a
+          class="share-button"
+          href="https://wa.me/?text=${encodeURIComponent(
+            `${shareMessage} ${shareUrl}`
+          )}"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Share ${name} on WhatsApp"
+        >
+          WhatsApp
+        </a>
+        <a
+          class="share-button"
+          href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+            shareUrl
+          )}"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Share ${name} on Facebook"
+        >
+          Facebook
+        </a>
+        <a
+          class="share-button"
+          href="https://x.com/intent/tweet?text=${encodeURIComponent(
+            shareMessage
+          )}&url=${encodeURIComponent(shareUrl)}"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Share ${name} on X"
+        >
+          X
+        </a>
       </div>
       <div class="activity-card-actions">
         ${
