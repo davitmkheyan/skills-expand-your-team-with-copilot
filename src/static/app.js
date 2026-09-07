@@ -128,11 +128,6 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTheme(theme);
   }
 
-  const copyShareButton = activityCard.querySelector(".copy-share-button");
-  copyShareButton.addEventListener("click", () => {
-    copyShareLink(shareUrl);
-  });
-
   function toggleTheme() {
     const isDarkMode = document.body.classList.contains("dark-mode");
     const nextTheme = isDarkMode ? "light" : "dark";
@@ -751,6 +746,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    const copyShareButton = activityCard.querySelector(".copy-share-button");
+    copyShareButton.addEventListener("click", () => {
+      copyShareLink(shareUrl);
+    });
 
     activitiesList.appendChild(activityCard);
   }
